@@ -74,6 +74,7 @@ function remove_emote () {
     if [ ! $image_path ]; then
         die "Emote does not exist."
     fi
+
     rm $image_path
     sed -i "/^$1/d" $data_file
     exit 0
@@ -151,9 +152,11 @@ if  [ "$fetch_emotes" = true ]; then
                 name=$(rm_tr_quotes $(echo $line | jq '.name'))
                 emote_id=$(rm_tr_quotes $(echo $line | jq '.id'))
                 url="https://cdn.discordapp.com/emojis/$emote_id"
+
                 filetype=$(curl -s -I $url | grep "^content-type: " | awk '{ print $2 }' | sed 's/.*\///g')
                 filename=$(echo "emotes/$name.$filetype" | sed 's/\r//g')
                 full_fn=$dir/$filename
+
                 if [ ! -f $filename ]; then
                     echo "Downloading $name..."
                     wget -q -O $full_fn $url
@@ -176,17 +179,22 @@ rofi_cmd=(rofi -dmenu -i -p "Emote:" -sort -show-icons)
 
 selected=$(sort -k 3 -r $data_file | \
     while read entry; do
+
         origname=$(echo $entry | awk '{print $1}')
         [ "$colon" = true ] && name=":${origname%%.*}:" || name="$origname"
+
         img=$(echo $entry | awk '{print $2}')
         [ ${img##*.} = "gif" ] && img=emotes/gif_thumbnails/$origname.png
+
         img=$(realpath $dir/$img)
         echo -e "$name\0icon\x1f$img"
+
     done | ${rofi_cmd[@]})
 
 if [ "$selected" ]; then
     [ "$colon" = true ] && selected=$(echo $selected | cut -d ":" -f 2)
     real_fn=$dir/$(grep "^$selected " $data_file | awk '{print $2}')
+
     if [ -f "$real_fn" ]; then
         mime_type=$(file -b --mime-type "$real_fn")
         # increments usage counter
