@@ -6,7 +6,7 @@ A bash script, for those of us who don't have nitro, that lets you use Discord e
 
 ## Setup
 
-The first time you run this script, it will download all the emotes in advance. To do this, an API token is required. [Here's](https://github.com/Tyrrrz/DiscordChatExporter/wiki/Obtaining-Token-and-Channel-IDs#how-to-get-a-user-token) a quick guide that tells you how to obtain your token.
+The first time you run this script, it will download all the emotes in advance. To do this, an API token is required. [Here's](https://discordhelp.net/discord-token) a quick guide that tells you how to obtain your token.
 
 If you are in too many servers or would only like to fetch emotes from certain servers, run the script with the `-f` option with the server IDs in a single string, space delimited. Example:
 ```
