@@ -177,6 +177,10 @@ rofi_cmd=(rofi -dmenu -i -p "Emote:" -sort -show-icons)
 
 [ ! -z ${rofi_config+x} ] && rofi_cmd+=(-config "$rofi_config")
 
+# switch to dragon-drop if on Arch-based distro
+dragon_cmd="dragon"
+which pacman >/dev/null && dragon_cmd="dragon-drop"
+
 selected=$(sort -k 3 -r $data_file | \
     while read entry; do
 
@@ -211,7 +215,7 @@ if [ "$selected" ]; then
                 die "You do not have discord open"
             fi
         else
-            dragon $real_fn --and-exit # temporary fix since gifs aren't getting copied to the clipboard
+            $dragon_cmd $real_fn --and-exit # temporary fix since gifs aren't getting copied to the clipboard
         fi
     else
         die "Invalid emote name"
