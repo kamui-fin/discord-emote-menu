@@ -9,6 +9,7 @@ emote_col=$dir/emotes
 thumbnail_path=$emote_col/gif_thumbnails
 window_class="Discord"
 colon=false
+paste_url=false
 
 function show_help () {
     echo "Usage: $(basename "$0") [OPTION...]"
@@ -20,6 +21,7 @@ function show_help () {
     echo -e "-d, --delete-emote [name]          Remove emote from collection"
     echo -e "-f, --fetch-emotes [servers]       Download emotes. Optionally specify a server ID list seperated by a space and enclosed in quotes. Example: \"234113424342 092432714749\""
     echo -e "-c, --colon                        Display colon at the beginning and end of emote name."
+    echo -e "-p, --paste-url                    Paste url instead of uploading file"
     echo -e "-h, --help                         Display this help menu\n"
     exit 0
 }
@@ -115,6 +117,10 @@ while [[ $# -gt 0 ]]; do
             colon=true
             shift
             ;;
+        -p|--paste-url)
+            paste_url=true
+            shift
+            ;;
         -h|--help)
             show_help
             ;;
@@ -153,19 +159,18 @@ if  [ "$fetch_emotes" = true ]; then
                 emote_id=$(rm_tr_quotes $(echo $line | jq '.id'))
                 url="https://cdn.discordapp.com/emojis/$emote_id"
 
-                filetype=$(curl -s -I $url | grep "^content-type: " | awk '{ print $2 }' | sed 's/.*\///g')
+                filetype=$(curl -s -I $url | grep "^content-type: " | awk '{ print $2 }' | sed -e 's/.*\///g' -e 's/\r//g')
                 filename=$(echo "emotes/$name.$filetype" | sed 's/\r//g')
                 full_fn=$dir/$filename
 
                 if [ ! -f $filename ]; then
                     echo "Downloading $name..."
-                    wget -q -O $full_fn $url
-                    convert -resize "48x48" $full_fn $full_fn
+                    wget -q -O $full_fn "$url?size=48"
                     # create thumbnail to display in rofi
                     # not sure why it wouldn't let me compare filetype
                     [  ${full_fn##*.} = "gif" ] && convert $full_fn -delete 1--1 $thumbnail_path/$name.png
                     [ -s $full_fn ] || rm $full_fn
-                    echo "$name $filename 0" >> $data_file
+                    echo "$name $filename 0 $url.$filetype?size=48" >> $data_file
                 else
                     echo "Skipping $name..."
                 fi
@@ -191,21 +196,32 @@ selected=$(sort -k 3 -r $data_file | \
         [ ${img##*.} = "gif" ] && img=emotes/gif_thumbnails/$origname.png
 
         img=$(realpath $dir/$img)
-        echo -e "$name\0icon\x1f$img"
+        url=$(echo $entry | awk '{print $4}')
+
+        if [[ $paste_url = false || $url != "" ]]; then
+            echo -e "$name\0icon\x1f$img"
+        fi
 
     done | ${rofi_cmd[@]})
 
 if [ "$selected" ]; then
     [ "$colon" = true ] && selected=$(echo $selected | cut -d ":" -f 2)
     real_fn=$dir/$(grep "^$selected " $data_file | awk '{print $2}')
+    url=$(grep "^$selected " $data_file | awk '{print $4}')
 
     if [ -f "$real_fn" ]; then
         mime_type=$(file -b --mime-type "$real_fn")
         # increments usage counter
-        sed -E -i 's/(^'"$selected"') (.*) ([0-9]*)/echo "\1 \2 $((\3+1))"/ge' $data_file
+        sed -E -i 's/(^'"$selected"') (.*) ([0-9]*) (.*)/echo "\1 \2 $((\3+1)) \4"/ge' $data_file
 
-        if [[ "$mime_type" == image/png ]]; then
-            xclip -se c -t image/png -i $real_fn 
+        if [[ "$mime_type" == image/png || $paste_url = true ]]; then
+            if [[ $paste_url = true ]]; then
+                echo $url | xclip -se c
+            else
+                xclip -se c -t image/png -i $real_fn 
+            fi
+
+            sleep 0.1 # I'm not entirely sure whats happening but sometimes xdotool fails randomly. More at https://github.com/jordansissel/xdotool/issues/60
             WID=$(xdotool search --class --onlyvisible --limit 1 "$window_class")
             if [ "$WID" ]; then
                 xdotool windowactivate $WID
