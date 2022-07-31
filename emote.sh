@@ -165,8 +165,7 @@ if  [ "$fetch_emotes" = true ]; then
 
                 if [ ! -f $filename ]; then
                     echo "Downloading $name..."
-                    wget -q -O $full_fn $url
-                    convert -resize "48x48" $full_fn $full_fn
+                    wget -q -O $full_fn "$url?size=48"
                     # create thumbnail to display in rofi
                     # not sure why it wouldn't let me compare filetype
                     [  ${full_fn##*.} = "gif" ] && convert $full_fn -delete 1--1 $thumbnail_path/$name.png
