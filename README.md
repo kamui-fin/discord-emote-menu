@@ -59,10 +59,6 @@ The only parameter to tweak for that would be `-w` to set the window class, whic
 
 All contributions in the form of PRs, bug reports, feature requests, etc are gladly appreciated.
 
-### TODO
-
-- Add cleaning up of stale emotes (404s) to the sync option
-
 ## Credits
 
 Credits to [yuky2020](https://github.com/yuky2020) for the Rofi theme from [this](https://github.com/yuky2020/rofi-themes) repository.

@@ -127,7 +127,10 @@ if  [ "$fetch_emotes" = true ]; then
                     echo "Skipping $name..."
                 fi
             done
-        done
+    done
+
+    echo "Done!"
+    exit 0
 fi
 
 rofi_cmd=(rofi -dmenu -i -p "Emote:" -sort -show-icons)
