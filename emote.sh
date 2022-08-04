@@ -17,11 +17,8 @@ function show_help () {
     echo "Options:"
     echo -e "-w, --window-class [class]         Window class to send the emote to. Set to \"Discord\" by default"
     echo -e "-r, --rofi-config  [file]          Specify a custom config file for the rofi menu"
-    echo -e "-a, --add-emote    [image] [name?] Load emote into collection"
-    echo -e "-d, --delete-emote [name]          Remove emote from collection"
     echo -e "-f, --fetch-emotes [servers]       Download emotes. Optionally specify a server ID list seperated by a space and enclosed in quotes. Example: \"234113424342 092432714749\""
     echo -e "-c, --colon                        Display colon at the beginning and end of emote name."
-    echo -e "-p, --paste-url                    Paste url instead of uploading file"
     echo -e "-h, --help                         Display this help menu\n"
     exit 0
 }
@@ -49,50 +46,9 @@ function invalid_option () {
     die "Incorrect usage."
 }
 
-function add_emote () {
-    if [ ! -f $1 ]; then
-        die "Image does not exist."
-    fi
-
-    basename=$(basename $1)
-    emote_name=${basename%%.*}
-
-    if [ -f $emote_col/$basename ]; then
-        die "Emote already exists."
-    fi
-
-    if [ ! -z $2 ]; then
-        emote_name=$2
-    fi
-
-    cp $1 $emote_col
-    resize $emote_col/$basename
-    echo "$emote_name $emote_col/$basename 0" >> $data_file
-    exit 0
-}
-
-function remove_emote () {
-    image_path=$(grep $1 $data_file | awk '{ print $2 }')
-    if [ ! $image_path ]; then
-        die "Emote does not exist."
-    fi
-
-    rm $image_path
-    sed -i "/^$1/d" $data_file
-    exit 0
-}
-
 while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
-        -a|--add-emote)
-            [ -z "$2" ] && invalid_option
-            add_emote  $2 $3
-            ;;
-        -d|--remove-emote)
-            [ -z "$2" ] && invalid_option
-            remove_emote $2
-            ;;
         -r|--rofi-config)
             [ -z "$2" ] && invalid_option
             rofi_config=$(rm_tr_quotes "$2")
@@ -115,10 +71,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         -c|--colon)
             colon=true
-            shift
-            ;;
-        -p|--paste-url)
-            paste_url=true
             shift
             ;;
         -h|--help)
@@ -182,10 +134,6 @@ rofi_cmd=(rofi -dmenu -i -p "Emote:" -sort -show-icons)
 
 [ ! -z ${rofi_config+x} ] && rofi_cmd+=(-config "$rofi_config")
 
-# switch to dragon-drop if on Arch-based distro
-dragon_cmd="dragon"
-which pacman >/dev/null && dragon_cmd="dragon-drop"
-
 selected=$(sort -k 3 -r $data_file | \
     while read entry; do
 
@@ -214,24 +162,16 @@ if [ "$selected" ]; then
         # increments usage counter
         sed -E -i 's/(^'"$selected"') (.*) ([0-9]*) (.*)/echo "\1 \2 $((\3+1)) \4"/ge' $data_file
 
-        if [[ "$mime_type" == image/png || $paste_url = true ]]; then
-            if [[ $paste_url = true ]]; then
-                echo $url | xclip -se c
-            else
-                xclip -se c -t image/png -i $real_fn 
-            fi
+        echo $url | xclip -se c
 
-            sleep 0.1 # I'm not entirely sure whats happening but sometimes xdotool fails randomly. More at https://github.com/jordansissel/xdotool/issues/60
-            WID=$(xdotool search --class --onlyvisible --limit 1 "$window_class")
-            if [ "$WID" ]; then
-                xdotool windowactivate $WID
-                xdotool key ctrl+v
-                xdotool key KP_Enter
-            else
-                die "You do not have discord open"
-            fi
+        sleep 0.1 # I'm not entirely sure whats happening but sometimes xdotool fails randomly. More at https://github.com/jordansissel/xdotool/issues/60
+        WID=$(xdotool search --class --onlyvisible --limit 1 "$window_class")
+        if [ "$WID" ]; then
+            xdotool windowactivate $WID
+            xdotool key ctrl+v
+            xdotool key KP_Enter
         else
-            $dragon_cmd $real_fn --and-exit # temporary fix since gifs aren't getting copied to the clipboard
+            die "You do not have discord open"
         fi
     else
         die "Invalid emote name"
