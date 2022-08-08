@@ -165,7 +165,7 @@ if [ "$selected" ]; then
         # increments usage counter
         sed -E -i 's/(^'"$selected"') (.*) ([0-9]*) (.*)/echo "\1 \2 $((\3+1)) \4"/ge' $data_file
 
-        echo $url | xclip -se c
+        echo $url | xclip -selection clipboard
 
         sleep 0.1 # I'm not entirely sure whats happening but sometimes xdotool fails randomly. More at https://github.com/jordansissel/xdotool/issues/60
         WID=$(xdotool search --class --onlyvisible --limit 1 "$window_class")
