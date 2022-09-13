@@ -35,6 +35,7 @@ Options:
 -r, --rofi-config  [file]          Specify a custom config file for the rofi menu
 -f, --fetch-emotes [servers]       Download emotes. Optionally specify a server ID list seperated by a space and enclosed in quotes. Example: "234113424342 092432714749"
 -c, --colon                        Display colon at the beginning and end of emote name.
+-p, --paste-url                    Paste url instead of uploading file
 -h, --help                         Display this help menu
 ```
 
